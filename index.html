@@ -10,6 +10,61 @@
 </head>
 <body>
 
+  <!-- AUTHENTICATION PAGE -->
+  <div class="auth-container" id="authContainer">
+    <div class="auth-left">
+      <div class="auth-content">
+        <h1 class="auth-title">finance</h1>
+        <h2 class="auth-tagline">Keep track of your money and save for your future</h2>
+        <p class="auth-description">Personal finance app puts you in control of your spending. Track transactions, set budgets, and add to savings pots easily.</p>
+        <div class="auth-illustration">
+          <svg viewBox="0 0 400 300" style="width:100%;height:auto;max-width:400px">
+            <rect x="50" y="200" width="300" height="80" rx="10" fill="#1a1a1a"/>
+            <circle cx="200" cy="100" r="40" fill="#4ade80"/>
+            <path d="M180 100 L200 120 L220 100" stroke="#1a1a1a" stroke-width="3" fill="none"/>
+            <rect x="70" y="220" width="60" height="40" rx="5" fill="#374151"/>
+            <rect x="140" y="220" width="60" height="40" rx="5" fill="#374151"/>
+            <rect x="210" y="220" width="60" height="40" rx="5" fill="#374151"/>
+            <rect x="280" y="220" width="60" height="40" rx="5" fill="#374151"/>
+            <circle cx="200" cy="100" r="35" fill="none" stroke="#1a1a1a" stroke-width="2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-form-container">
+        <h2 id="authFormTitle">Login</h2>
+        <p id="authFormSubtitle">Welcome back! Please login to your account.</p>
+        
+        <form id="authForm" class="auth-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          </div>
+          <div id="confirmPasswordGroup" class="form-group" style="display:none;">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password">
+          </div>
+          <button type="submit" class="auth-btn" id="authSubmitBtn">Login</button>
+        </form>
+        
+        <div class="auth-switch">
+          <span id="authSwitchText">Don't have an account?</span>
+          <button type="button" class="auth-link" id="authSwitchBtn">Sign Up</button>
+        </div>
+        
+        <div id="authMessage" class="auth-message"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP (hidden by default) -->
+  <div class="app-container" id="appContainer" style="display:none;">
+
   <!-- ══════════════ SIDEBAR ══════════════ -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-top">
@@ -227,6 +282,8 @@
     </section>
 
   </main>
+
+  </div> <!-- end app-container -->
 
   <!-- MODAL -->
   <div class="modal-overlay" id="modalOverlay">

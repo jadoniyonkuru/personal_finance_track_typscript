@@ -49,11 +49,25 @@ interface RecurringBill {
   status: BillStatus;
 }
 
+interface User {
+  id: string;
+  email: string;
+  password: string; // In production, this should be hashed
+  createdAt: string;
+}
+
+interface AuthState {
+  currentUser: User | null;
+  isAuthenticated: boolean;
+}
+
 interface AppState {
   transactions: Transaction[];
   budgets: Budget[];
   pots: SavingsPot[];
   bills: RecurringBill[];
+  users: User[];
+  auth: AuthState;
 }
 
 interface Summary {
@@ -145,6 +159,11 @@ function loadState(): AppState {
       budgets:      Array.isArray(p.budgets)      ? p.budgets      : [],
       pots:         Array.isArray(p.pots)          ? p.pots         : [],
       bills:        Array.isArray(p.bills)         ? p.bills        : [],
+      users:        Array.isArray(p.users)         ? p.users        : [],
+      auth: {
+        currentUser: p.auth?.currentUser || null,
+        isAuthenticated: p.auth?.isAuthenticated || false
+      }
     };
   } catch {
     return getDefaultState();
@@ -185,10 +204,190 @@ function getDefaultState(): AppState {
       { id: generateId(), title: "Internet",    amount: 40,   dueDay: 20, status: "due-soon" },
       { id: generateId(), title: "Spotify",     amount: 10,   dueDay: 25, status: "upcoming" },
     ],
+    users: [],
+    auth: {
+      currentUser: null,
+      isAuthenticated: false
+    }
   };
 }
 
-// 5. BUSINESS LOGIC 
+// 5. AUTHENTICATION LOGIC 
+
+function signUp(email: string, password: string): { success: boolean; message: string } {
+  const state = loadState();
+  
+  // Check if user already exists
+  if (state.users.some(user => user.email === email)) {
+    return { success: false, message: "User with this email already exists" };
+  }
+  
+  // Validate email format
+  if (!email.includes("@") || !email.includes(".")) {
+    return { success: false, message: "Please enter a valid email address" };
+  }
+  
+  // Validate password
+  if (password.length < 6) {
+    return { success: false, message: "Password must be at least 6 characters long" };
+  }
+  
+  // Create new user
+  const newUser: User = {
+    id: generateId(),
+    email,
+    password, // In production, this should be hashed
+    createdAt: new Date().toISOString()
+  };
+  
+  state.users.push(newUser);
+  state.auth.currentUser = newUser;
+  state.auth.isAuthenticated = true;
+  saveState(state);
+  
+  return { success: true, message: "Account created successfully!" };
+}
+
+function login(email: string, password: string): { success: boolean; message: string } {
+  const state = loadState();
+  
+  // Find user by email
+  const user = state.users.find(u => u.email === email);
+  
+  if (!user) {
+    return { success: false, message: "No account found with this email" };
+  }
+  
+  if (user.password !== password) { // In production, use proper password comparison
+    return { success: false, message: "Incorrect password" };
+  }
+  
+  // Update auth state
+  state.auth.currentUser = user;
+  state.auth.isAuthenticated = true;
+  saveState(state);
+  
+  return { success: true, message: "Login successful!" };
+}
+
+function logout(): void {
+  const state = loadState();
+  state.auth.currentUser = null;
+  state.auth.isAuthenticated = false;
+  saveState(state);
+}
+
+function isAuthenticated(): boolean {
+  const state = loadState();
+  return state.auth.isAuthenticated;
+}
+
+function getCurrentUser(): User | null {
+  const state = loadState();
+  return state.auth.currentUser;
+}
+
+// 6. AUTHENTICATION UI FUNCTIONS 
+
+function showAuthPage(): void {
+  getEl("authContainer").style.display = "flex";
+  getEl("appContainer").style.display = "none";
+  document.title = "Finance - Login";
+}
+
+function showAppPage(): void {
+  getEl("authContainer").style.display = "none";
+  getEl("appContainer").style.display = "block";
+  document.title = "Finance - Personal Finance App";
+}
+
+function setupAuthForm(): void {
+  let isLoginMode = true;
+  
+  const authForm = getEl<HTMLFormElement>("authForm");
+  const authFormTitle = getEl("authFormTitle");
+  const authFormSubtitle = getEl("authFormSubtitle");
+  const authSubmitBtn = getEl("authSubmitBtn");
+  const authSwitchBtn = getEl("authSwitchBtn");
+  const authSwitchText = getEl("authSwitchText");
+  const confirmPasswordGroup = getEl("confirmPasswordGroup");
+  const authMessage = getEl("authMessage");
+  
+  // Toggle between login and signup
+  authSwitchBtn.addEventListener("click", () => {
+    isLoginMode = !isLoginMode;
+    
+    if (isLoginMode) {
+      authFormTitle.textContent = "Login";
+      authFormSubtitle.textContent = "Welcome back! Please login to your account.";
+      authSubmitBtn.textContent = "Login";
+      authSwitchText.textContent = "Don't have an account?";
+      authSwitchBtn.textContent = "Sign Up";
+      confirmPasswordGroup.style.display = "none";
+    } else {
+      authFormTitle.textContent = "Sign Up";
+      authFormSubtitle.textContent = "Create your account to get started.";
+      authSubmitBtn.textContent = "Sign Up";
+      authSwitchText.textContent = "Already have an account?";
+      authSwitchBtn.textContent = "Login";
+      confirmPasswordGroup.style.display = "block";
+    }
+    
+    authMessage.textContent = "";
+    authMessage.className = "auth-message";
+  });
+  
+  // Handle form submission
+  authForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    
+    const email = getEl<HTMLInputElement>("email").value.trim();
+    const password = getEl<HTMLInputElement>("password").value;
+    const confirmPassword = getEl<HTMLInputElement>("confirmPassword").value;
+    
+    // Clear previous messages
+    authMessage.textContent = "";
+    authMessage.className = "auth-message";
+    
+    if (isLoginMode) {
+      // Handle login
+      const result = login(email, password);
+      if (result.success) {
+        authMessage.textContent = result.message;
+        authMessage.className = "auth-message success";
+        setTimeout(() => {
+          showAppPage();
+          renderAll();
+        }, 1000);
+      } else {
+        authMessage.textContent = result.message;
+        authMessage.className = "auth-message error";
+      }
+    } else {
+      // Handle signup
+      if (password !== confirmPassword) {
+        authMessage.textContent = "Passwords do not match";
+        authMessage.className = "auth-message error";
+        return;
+      }
+      
+      const result = signUp(email, password);
+      if (result.success) {
+        authMessage.textContent = result.message;
+        authMessage.className = "auth-message success";
+        setTimeout(() => {
+          showAppPage();
+          renderAll();
+        }, 1000);
+      } else {
+        authMessage.textContent = result.message;
+        authMessage.className = "auth-message error";
+      }
+    }
+  });
+}
+
+// 7. BUSINESS LOGIC 
 
 function computeSummary(txns: Transaction[]): Summary {
   return txns.reduce<Summary>(
@@ -803,9 +1002,10 @@ function bindEvents(): void {
   getEl("openAddPot").addEventListener("click", openAddPotModal);
   getEl("openAddBill").addEventListener("click", openAddBillModal);
 
-  // Logout (just resets to overview in this demo)
+  // Logout
   getEl("logoutBtn").addEventListener("click", () => {
-    switchView("overview");
+    logout();
+    showAuthPage();
   });
 
   // Transaction filters
@@ -818,12 +1018,20 @@ function bindEvents(): void {
   getEl("nextPage").addEventListener("click", () => { txnPage++; renderAllTxns(loadState()); });
 }
 
-// ── 16. INIT ──────────────────────────────────────────────────
+// ── 16. INIT ──────────────────────────────────────────────────// &#8212; INIT &#8212;
 
 function init(): void {
   if (!localStorage.getItem(STORAGE_KEY)) saveState(getDefaultState());
-  bindEvents();
-  renderAll();
+  
+  // Check authentication status
+  if (isAuthenticated()) {
+    showAppPage();
+    bindEvents();
+    renderAll();
+  } else {
+    showAuthPage();
+    setupAuthForm();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);

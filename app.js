@@ -1,10 +1,6 @@
 "use strict";
-// ─────────────────────────────────────────────────────────────
-//  PERSONAL FINANCE APP — TypeScript Learning Project
-//  Covers: types, interfaces, unions, generics, DOM manipulation,
-//          event handling, localStorage, JSON parsing, strict typing
-// ─────────────────────────────────────────────────────────────
-// ── 2. CONSTANTS ──────────────────────────────────────────────
+//  1. TYPES & INTERFACES 
+// 2. CONSTANTS 
 const STORAGE_KEY = "fintrack_v2";
 const CATEGORY_LABEL = {
     income: "Income",
@@ -27,7 +23,7 @@ const BUDGET_COLORS = {
 };
 const AVATAR_COLORS = 8; // cycles through av-0..av-7
 const PAGE_SIZE = 8;
-// ── 3. UTILITIES ──────────────────────────────────────────────
+//  3. UTILITIES
 function generateId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -56,7 +52,7 @@ function avatarClass(name) {
         hash = (hash + name.charCodeAt(i)) % AVATAR_COLORS;
     return `av-${hash}`;
 }
-// ── 4. localStorage ───────────────────────────────────────────
+//  4. localStorage 
 function loadState() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -68,6 +64,11 @@ function loadState() {
             budgets: Array.isArray(p.budgets) ? p.budgets : [],
             pots: Array.isArray(p.pots) ? p.pots : [],
             bills: Array.isArray(p.bills) ? p.bills : [],
+            users: Array.isArray(p.users) ? p.users : [],
+            auth: {
+                currentUser: p.auth?.currentUser || null,
+                isAuthenticated: p.auth?.isAuthenticated || false
+            }
         };
     }
     catch {
@@ -107,9 +108,163 @@ function getDefaultState() {
             { id: generateId(), title: "Internet", amount: 40, dueDay: 20, status: "due-soon" },
             { id: generateId(), title: "Spotify", amount: 10, dueDay: 25, status: "upcoming" },
         ],
+        users: [],
+        auth: {
+            currentUser: null,
+            isAuthenticated: false
+        }
     };
 }
-// ── 5. BUSINESS LOGIC ─────────────────────────────────────────
+// 5. AUTHENTICATION LOGIC 
+function signUp(email, password) {
+    const state = loadState();
+    // Check if user already exists
+    if (state.users.some(user => user.email === email)) {
+        return { success: false, message: "User with this email already exists" };
+    }
+    // Validate email format
+    if (!email.includes("@") || !email.includes(".")) {
+        return { success: false, message: "Please enter a valid email address" };
+    }
+    // Validate password
+    if (password.length < 6) {
+        return { success: false, message: "Password must be at least 6 characters long" };
+    }
+    // Create new user
+    const newUser = {
+        id: generateId(),
+        email,
+        password, // In production, this should be hashed
+        createdAt: new Date().toISOString()
+    };
+    state.users.push(newUser);
+    state.auth.currentUser = newUser;
+    state.auth.isAuthenticated = true;
+    saveState(state);
+    return { success: true, message: "Account created successfully!" };
+}
+function login(email, password) {
+    const state = loadState();
+    // Find user by email
+    const user = state.users.find(u => u.email === email);
+    if (!user) {
+        return { success: false, message: "No account found with this email" };
+    }
+    if (user.password !== password) { // In production, use proper password comparison
+        return { success: false, message: "Incorrect password" };
+    }
+    // Update auth state
+    state.auth.currentUser = user;
+    state.auth.isAuthenticated = true;
+    saveState(state);
+    return { success: true, message: "Login successful!" };
+}
+function logout() {
+    const state = loadState();
+    state.auth.currentUser = null;
+    state.auth.isAuthenticated = false;
+    saveState(state);
+}
+function isAuthenticated() {
+    const state = loadState();
+    return state.auth.isAuthenticated;
+}
+function getCurrentUser() {
+    const state = loadState();
+    return state.auth.currentUser;
+}
+// 6. AUTHENTICATION UI FUNCTIONS 
+function showAuthPage() {
+    getEl("authContainer").style.display = "flex";
+    getEl("appContainer").style.display = "none";
+    document.title = "Finance - Login";
+}
+function showAppPage() {
+    getEl("authContainer").style.display = "none";
+    getEl("appContainer").style.display = "block";
+    document.title = "Finance - Personal Finance App";
+}
+function setupAuthForm() {
+    let isLoginMode = true;
+    const authForm = getEl("authForm");
+    const authFormTitle = getEl("authFormTitle");
+    const authFormSubtitle = getEl("authFormSubtitle");
+    const authSubmitBtn = getEl("authSubmitBtn");
+    const authSwitchBtn = getEl("authSwitchBtn");
+    const authSwitchText = getEl("authSwitchText");
+    const confirmPasswordGroup = getEl("confirmPasswordGroup");
+    const authMessage = getEl("authMessage");
+    // Toggle between login and signup
+    authSwitchBtn.addEventListener("click", () => {
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+            authFormTitle.textContent = "Login";
+            authFormSubtitle.textContent = "Welcome back! Please login to your account.";
+            authSubmitBtn.textContent = "Login";
+            authSwitchText.textContent = "Don't have an account?";
+            authSwitchBtn.textContent = "Sign Up";
+            confirmPasswordGroup.style.display = "none";
+        }
+        else {
+            authFormTitle.textContent = "Sign Up";
+            authFormSubtitle.textContent = "Create your account to get started.";
+            authSubmitBtn.textContent = "Sign Up";
+            authSwitchText.textContent = "Already have an account?";
+            authSwitchBtn.textContent = "Login";
+            confirmPasswordGroup.style.display = "block";
+        }
+        authMessage.textContent = "";
+        authMessage.className = "auth-message";
+    });
+    // Handle form submission
+    authForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const email = getEl("email").value.trim();
+        const password = getEl("password").value;
+        const confirmPassword = getEl("confirmPassword").value;
+        // Clear previous messages
+        authMessage.textContent = "";
+        authMessage.className = "auth-message";
+        if (isLoginMode) {
+            // Handle login
+            const result = login(email, password);
+            if (result.success) {
+                authMessage.textContent = result.message;
+                authMessage.className = "auth-message success";
+                setTimeout(() => {
+                    showAppPage();
+                    renderAll();
+                }, 1000);
+            }
+            else {
+                authMessage.textContent = result.message;
+                authMessage.className = "auth-message error";
+            }
+        }
+        else {
+            // Handle signup
+            if (password !== confirmPassword) {
+                authMessage.textContent = "Passwords do not match";
+                authMessage.className = "auth-message error";
+                return;
+            }
+            const result = signUp(email, password);
+            if (result.success) {
+                authMessage.textContent = result.message;
+                authMessage.className = "auth-message success";
+                setTimeout(() => {
+                    showAppPage();
+                    renderAll();
+                }, 1000);
+            }
+            else {
+                authMessage.textContent = result.message;
+                authMessage.className = "auth-message error";
+            }
+        }
+    });
+}
+// 7. BUSINESS LOGIC 
 function computeSummary(txns) {
     return txns.reduce((acc, t) => {
         if (t.type === "income") {
@@ -152,16 +307,16 @@ function filterTransactions(txns, search, cat) {
     return txns.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) &&
         (cat === "" || t.category === cat));
 }
-// ── 6. DOM HELPERS ────────────────────────────────────────────
+// 6. DOM HELPERS 
 function getEl(id) {
     const el = document.getElementById(id);
     if (!el)
         throw new Error(`#${id} not found`);
     return el;
 }
-// ── 7. PAGINATION STATE ───────────────────────────────────────
+//7. PAGINATION STATE 
 let txnPage = 0;
-// ── 8. RENDER ─────────────────────────────────────────────────
+// 8. RENDER 
 function txnRowHTML(t, showDelete) {
     const sign = t.type === "income" ? "+" : "−";
     const cls = t.type === "income" ? "amount-pos" : "amount-neg";
@@ -363,7 +518,7 @@ function renderAll() {
     renderPots(state.pots);
     renderBills(state);
 }
-// ── 9. MODAL ──────────────────────────────────────────────────
+//  9. MODAL 
 function openModal(html) {
     getEl("modalBody").innerHTML = html;
     getEl("modalOverlay").classList.add("open");
@@ -708,9 +863,10 @@ function bindEvents() {
     getEl("openAddBudget").addEventListener("click", openAddBudgetModal);
     getEl("openAddPot").addEventListener("click", openAddPotModal);
     getEl("openAddBill").addEventListener("click", openAddBillModal);
-    // Logout (just resets to overview in this demo)
+    // Logout
     getEl("logoutBtn").addEventListener("click", () => {
-        switchView("overview");
+        logout();
+        showAuthPage();
     });
     // Transaction filters
     getEl("searchTxn").addEventListener("input", () => renderAllTxns(loadState()));
@@ -720,11 +876,19 @@ function bindEvents() {
     getEl("prevPage").addEventListener("click", () => { txnPage--; renderAllTxns(loadState()); });
     getEl("nextPage").addEventListener("click", () => { txnPage++; renderAllTxns(loadState()); });
 }
-// ── 16. INIT ──────────────────────────────────────────────────
+// ── 16. INIT ──────────────────────────────────────────────────// &#8212; INIT &#8212;
 function init() {
     if (!localStorage.getItem(STORAGE_KEY))
         saveState(getDefaultState());
-    bindEvents();
-    renderAll();
+    // Check authentication status
+    if (isAuthenticated()) {
+        showAppPage();
+        bindEvents();
+        renderAll();
+    }
+    else {
+        showAuthPage();
+        setupAuthForm();
+    }
 }
 document.addEventListener("DOMContentLoaded", init);
