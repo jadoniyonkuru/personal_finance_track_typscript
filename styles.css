@@ -169,6 +169,8 @@ body { display: flex; min-height: 100vh; }
 .view.active { display: block; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
 
+@keyframes donutFadeIn { from { opacity:0; } to { opacity:1; } }
+
 /* ── View Header ───────────────────────────────────── */
 .view-header {
   display: flex;
@@ -344,6 +346,125 @@ body { display: flex; min-height: 100vh; }
 .mini-pot-info .mini-val { font-size: 16px; font-weight: 700; }
 
 /* ── Overview Budgets ──────────────────────────────── */
+.overview-budget-card {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.budget-chart-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  min-width: 200px;
+}
+
+.budget-cycle-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.budget-cycle-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.budget-cycle-segment {
+  fill: none;
+  stroke-width: 28;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: cycleDraw 0.6s ease forwards;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.budget-cycle-segment:hover {
+  stroke-width: 32;
+  filter: brightness(1.1);
+}
+
+.budget-cycle-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.budget-cycle-total {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-1);
+}
+
+.budget-cycle-label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.budget-cycle-limit {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+.budget-chart-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.overview-budget-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.overview-budget-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.overview-budget-label span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.budget-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.overview-budget-limit-text {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+@keyframes cycleDraw {
+  from {
+    stroke-dashoffset: 628.32;
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .overview-budget-list { display: flex; flex-direction: column; gap: 12px; }
 
 .ov-budget-item .ov-budget-label {
@@ -560,6 +681,14 @@ body { display: flex; min-height: 100vh; }
   font-size: 12px;
   color: var(--text-2);
   margin-top: 4px;
+}
+
+.budget-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }
 
 .budget-card-right {
@@ -882,6 +1011,33 @@ body { display: flex; min-height: 100vh; }
 }
 
 .input-field:focus { border-color: var(--dark); }
+
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.color-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.color-swatch:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.color-swatch.active {
+  border-color: var(--dark);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.1), inset 0 0 0 2px rgba(255,255,255,0.8);
+}
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
@@ -1274,6 +1430,15 @@ body { display: flex; min-height: 100vh; }
   .budget-card-left {
     min-width: 100%;
   }
+  
+  .overview-budget-card {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .budget-chart-left {
+    min-width: 100%;
+  }
 }
 
 @media (min-width: 769px) {
@@ -1289,5 +1454,9 @@ body { display: flex; min-height: 100vh; }
   
   .budget-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .color-palette {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
