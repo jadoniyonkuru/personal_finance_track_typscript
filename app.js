@@ -425,25 +425,69 @@ function renderBudgets(state) {
         const spent = spentInCategory(state.transactions, b.category);
         const pct = clamp((spent / b.limit) * 100, 0, 100);
         const over = spent > b.limit;
+        const remaining = Math.max(0, b.limit - spent);
+        // Create circular progress (SVG donut chart)
+        const radius = 45;
+        const circumference = 2 * Math.PI * radius;
+        const strokeDashoffset = circumference * (1 - pct / 100);
+        const latestTxns = state.transactions
+            .filter(t => t.category === b.category)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 3);
+        const latestSpendingHtml = latestTxns.length === 0
+            ? `<p style="color:var(--text-2);font-size:13px">You haven't made any spendings yet.</p>`
+            : latestTxns.map(t => `
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0">
+          <span>${t.name}</span>
+          <span>${formatCurrency(t.amount)}</span>
+        </div>`).join("");
         return `
-      <div class="budget-card">
-        <div class="budget-card-header">
-          <div class="budget-cat-title">
-            <div class="budget-dot" style="background:${b.color}"></div>
-            ${CATEGORY_LABEL[b.category]}
+      <div class="budget-card-new">
+        <div class="budget-card-left">
+          <svg width="150" height="150" viewBox="0 0 150 150" style="transform:rotate(-90deg)">
+            <circle cx="75" cy="75" r="${radius}" fill="none" stroke="var(--border)" stroke-width="16"/>
+            <circle cx="75" cy="75" r="${radius}" fill="none" stroke="${over ? "var(--danger)" : b.color}" stroke-width="16" 
+              stroke-dasharray="${circumference}" stroke-dashoffset="${strokeDashoffset}" 
+              stroke-linecap="round" style="transition:stroke-dashoffset 0.3s ease"/>
+          </svg>
+          <div class="budget-chart-text">
+            <div class="budget-chart-amount">${formatCurrency(spent)}</div>
+            <div class="budget-chart-label">of ${formatCurrency(b.limit)} limit</div>
           </div>
-          <button class="btn-danger-sm" onclick="deleteBudget('${b.id}')">Remove</button>
         </div>
-        <div class="budget-amounts">
-          <span>Maximum of <strong>${formatCurrency(b.limit)}</strong></span>
-          ${over ? `<span style="color:var(--danger);font-weight:700">Over!</span>` : ""}
-        </div>
-        <div class="progress-bar" style="margin-bottom:8px">
-          <div class="progress-fill" style="width:${pct}%;background:${over ? "var(--danger)" : b.color}"></div>
-        </div>
-        <div class="budget-amounts">
-          <span>Spent: <strong>${formatCurrency(spent)}</strong></span>
-          <span>Left: <strong>${formatCurrency(Math.max(0, b.limit - spent))}</strong></span>
+        <div class="budget-card-right">
+          <div class="budget-card-header-new">
+            <div>
+              <div class="budget-card-title">${CATEGORY_LABEL[b.category]}</div>
+              <div class="budget-card-subtitle">Maximum of ${formatCurrency(b.limit)}</div>
+            </div>
+            <div class="budget-menu">
+              <button class="budget-menu-btn" onclick="toggleBudgetMenu('${b.id}')" title="Menu">⋮</button>
+              <div class="budget-menu-dropdown" id="menu-${b.id}" style="display:none">
+                <button onclick="showEditBudget('${b.id}')">Edit Budget</button>
+                <button class="delete-option" onclick="deleteBudget('${b.id}')">Delete Budget</button>
+              </div>
+            </div>
+          </div>
+          <div class="budget-summary-stats">
+            <div class="stat-item">
+              <div class="stat-label">Spent</div>
+              <div class="stat-value">${formatCurrency(spent)}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Free</div>
+              <div class="stat-value">${formatCurrency(remaining)}</div>
+            </div>
+          </div>
+          <div class="budget-latest">
+            <div class="budget-latest-header">
+              <h4>Latest Spending</h4>
+              <a href="#" class="see-all" data-view="transactions">See All</a>
+            </div>
+            <div class="budget-latest-items">
+              ${latestSpendingHtml}
+            </div>
+          </div>
         </div>
       </div>`;
     }).join("");
@@ -606,7 +650,7 @@ window.deleteTransaction = (id) => {
     saveState(state);
     renderAll();
 };
-// ── 11. BUDGET ACTIONS ────────────────────────────────────────
+// ── 11. BUDGET ACTIONS ───────────────────────────────────────────
 function openAddBudgetModal() {
     const state = loadState();
     const used = new Set(state.budgets.map(b => b.category));
@@ -618,27 +662,43 @@ function openAddBudgetModal() {
         openModal(`<h2>Add Budget</h2><p style="color:var(--text-2);margin-bottom:20px">Budgets set for all categories.</p><button class="btn-black" style="width:100%" onclick="closeModal()">Close</button>`);
         return;
     }
+    const themeOpts = Object.keys(BUDGET_COLORS)
+        .filter(c => !used.has(c))
+        .map(c => `<option value="${c}" style="background:${BUDGET_COLORS[c]}">${CATEGORY_LABEL[c]} Theme</option>`)
+        .join("");
     openModal(`
     <h2>Add New Budget</h2>
+    <p style="color:var(--text-2);margin-bottom:20px;font-size:14px">Choose a category to set a spending budget. These categories can help you monitor spending.</p>
     <div class="form-group">
       <label class="input-label" for="budgetCategory">Category</label>
-      <select class="input-field" id="budgetCategory">${opts}</select>
+      <select class="input-field" id="budgetCategory">
+        <option value="">Select a category</option>
+        ${opts}
+      </select>
     </div>
     <div class="form-group">
-      <label class="input-label" for="budgetLimit">Maximum Spending ($)</label>
-      <input class="input-field" id="budgetLimit" type="number" min="1" step="1" placeholder="e.g. 300" />
+      <label class="input-label" for="budgetLimit">Maximum Spend</label>
+      <input class="input-field" id="budgetLimit" type="number" min="1" step="1" placeholder="e.g. \$2000" />
     </div>
-    <div class="modal-actions">
-      <button class="btn-outline" onclick="closeModal()">Cancel</button>
-      <button class="btn-black" onclick="saveBudget()">Add Budget</button>
+    <div class="form-group">
+      <label class="input-label" for="budgetTheme">Theme</label>
+      <select class="input-field" id="budgetTheme">
+        <option value="">Select a theme</option>
+        ${themeOpts}
+      </select>
     </div>
+    <button class="btn-black" style="width:100%;padding:12px;font-weight:600" onclick="saveBudget()">Submit</button>
   `);
 }
 window.saveBudget = () => {
     const cat = getEl("budgetCategory").value;
     const limit = parseFloat(getEl("budgetLimit").value);
+    if (!cat) {
+        alert("Please select a category.");
+        return;
+    }
     if (isNaN(limit) || limit <= 0) {
-        alert("Enter a valid limit.");
+        alert("Please enter a valid spending limit.");
         return;
     }
     const state = loadState();
@@ -646,6 +706,50 @@ window.saveBudget = () => {
     saveState(state);
     closeModal();
     renderAll();
+};
+window.toggleBudgetMenu = (id) => {
+    const menu = getEl(`menu-${id}`);
+    const isOpen = menu.style.display !== "none";
+    // Close all menus
+    document.querySelectorAll(".budget-menu-dropdown").forEach(m => m.style.display = "none");
+    // Toggle current
+    menu.style.display = isOpen ? "none" : "block";
+};
+window.showEditBudget = (id) => {
+    const state = loadState();
+    const budget = state.budgets.find(b => b.id === id);
+    if (!budget)
+        return;
+    openModal(`
+    <h2>Edit Budget</h2>
+    <div class="form-group">
+      <label class="input-label">Category</label>
+      <div style="padding:12px;background:var(--bg);border-radius:8px;color:var(--text-1)">${CATEGORY_LABEL[budget.category]}</div>
+    </div>
+    <div class="form-group">
+      <label class="input-label" for="editBudgetLimit">Maximum Spending ($)</label>
+      <input class="input-field" id="editBudgetLimit" type="number" min="1" step="1" value="${budget.limit}" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn-black" onclick="saveEditBudget('${id}')">Update Budget</button>
+    </div>
+  `);
+};
+window.saveEditBudget = (id) => {
+    const limit = parseFloat(getEl("editBudgetLimit").value);
+    if (isNaN(limit) || limit <= 0) {
+        alert("Enter a valid limit.");
+        return;
+    }
+    const state = loadState();
+    const budget = state.budgets.find(b => b.id === id);
+    if (budget) {
+        budget.limit = limit;
+        saveState(state);
+        closeModal();
+        renderAll();
+    }
 };
 window.deleteBudget = (id) => {
     if (!confirm("Remove this budget?"))
@@ -844,9 +948,31 @@ function bindEvents() {
                 switchView(view);
         });
     });
+    // See all links (budget latest spending)
+    document.querySelectorAll(".see-all[data-view]").forEach(link => {
+        link.addEventListener("click", e => {
+            e.preventDefault();
+            const view = link.dataset.view;
+            if (view)
+                switchView(view);
+        });
+    });
+    // Close budget menus when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".budget-menu")) {
+            document.querySelectorAll(".budget-menu-dropdown").forEach(m => m.style.display = "none");
+        }
+    });
     // Sidebar minimize
     getEl("minimizeBtn").addEventListener("click", () => {
         getEl("sidebar").classList.toggle("collapsed");
+    });
+    // Mobile menu toggle
+    getEl("mobileMenuBtn").addEventListener("click", () => {
+        getEl("sidebar").classList.toggle("mobile-open");
+    });
+    getEl("sidebarOverlay").addEventListener("click", () => {
+        getEl("sidebar").classList.remove("mobile-open");
     });
     // Modal close
     getEl("modalClose").addEventListener("click", closeModal);

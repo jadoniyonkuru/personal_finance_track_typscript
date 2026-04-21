@@ -120,6 +120,37 @@ body { display: flex; min-height: 100vh; }
 
 .minimize-btn:hover { color: #fff; }
 
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+}
+
+.sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 32px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.sidebar-action-btn:hover { color: #fff; }
+
+.sidebar-action-btn:last-child {
+  padding-bottom: 36px;
+}
+
 /* ── Main ──────────────────────────────────────────── */
 .main-content {
   margin-left: var(--sidebar-w);
@@ -492,8 +523,174 @@ body { display: flex; min-height: 100vh; }
 /* ── Budget Grid ───────────────────────────────────── */
 .budget-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+}
+
+.budget-card-new {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.budget-card-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  min-width: 150px;
+}
+
+.budget-chart-text {
+  text-align: center;
+}
+
+.budget-chart-amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.budget-chart-label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 4px;
+}
+
+.budget-card-right {
+  flex: 1;
+}
+
+.budget-card-header-new {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.budget-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 4px;
+}
+
+.budget-card-subtitle {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.budget-menu {
+  position: relative;
+}
+
+.budget-menu-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s;
+}
+
+.budget-menu-btn:hover {
+  color: var(--text-1);
+}
+
+.budget-menu-dropdown {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  z-index: 10;
+  min-width: 140px;
+}
+
+.budget-menu-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-1);
+  transition: background 0.15s;
+}
+
+.budget-menu-dropdown button:hover {
+  background: var(--bg);
+}
+
+.budget-menu-dropdown button.delete-option {
+  color: var(--danger);
+  border-top: 1px solid var(--border);
+}
+
+.budget-summary-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-item {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.budget-latest {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.budget-latest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.budget-latest-header h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0;
+}
+
+.budget-latest-header .see-all {
+  font-size: 13px;
+  color: var(--accent-teal);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.budget-latest-items {
+  font-size: 13px;
 }
 
 .budget-card {
@@ -551,7 +748,7 @@ body { display: flex; min-height: 100vh; }
 /* ── Pots Grid ─────────────────────────────────────── */
 .pots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
@@ -929,5 +1126,168 @@ body { display: flex; min-height: 100vh; }
   
   .auth-right {
     padding: 20px;
+  }
+}
+
+/* ── Responsive Design for Main App ────────────────── */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: var(--sidebar-w);
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 20px 20px 40px;
+  }
+  
+  .sidebar.collapsed ~ .main-content {
+    margin-left: 0;
+  }
+  
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .view-header h1 {
+    font-size: 24px;
+  }
+  
+  .summary-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .overview-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .panel-wide {
+    width: 100%;
+  }
+  
+  .txn-table {
+    font-size: 12px;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+  
+  .txn-table th,
+  .txn-table td {
+    padding: 8px 12px;
+  }
+  
+  .filter-bar {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .filter-controls .select-field {
+    width: 100%;
+  }
+  
+  .pagination {
+    justify-content: center;
+  }
+  
+  .bills-summary-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .bills-row {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  /* Mobile menu button */
+  .mobile-menu-btn {
+    display: block;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 101;
+    background: var(--dark);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    cursor: pointer;
+  }
+  
+  .mobile-menu-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Overlay for mobile sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+  
+  .sidebar.mobile-open ~ .sidebar-overlay {
+    display: block;
+  }
+  
+  .pots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .budget-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .budget-card-new {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .budget-card-left {
+    min-width: 100%;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-menu-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pots-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .budget-grid {
+    grid-template-columns: 1fr;
   }
 }

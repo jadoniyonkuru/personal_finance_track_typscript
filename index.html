@@ -81,23 +81,30 @@
         </a></li>
       </ul>
     </div>
-    <button class="minimize-btn" id="minimizeBtn">
-      <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-      <span class="nav-label">Minimize Menu</span>
-    </button>
+    <div class="sidebar-bottom">
+      <button class="sidebar-action-btn" id="logoutBtn">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="nav-label">Logout</span>
+      </button>
+      <button class="minimize-btn" id="minimizeBtn">
+        <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+        <span class="nav-label">Minimize Menu</span>
+      </button>
+    </div>
   </nav>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!--  MAIN  -->
   <main class="main-content" id="mainContent">
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
 
     <!-- OVERVIEW -->
     <section class="view active" id="view-overview">
       <header class="view-header">
         <h1>Overview</h1>
-        <button class="btn-black" id="logoutBtn">
-          <svg viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Logout
-        </button>
       </header>
       <div class="summary-cards">
         <div class="card card-dark">
@@ -199,6 +206,7 @@
       </div>
     </section>
 
+    <!-- BUDGETS -->
     <!-- BUDGETS -->
     <section class="view" id="view-budgets">
       <header class="view-header">
