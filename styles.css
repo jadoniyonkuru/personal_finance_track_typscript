@@ -179,6 +179,49 @@ body { display: flex; min-height: 100vh; }
   margin-bottom: 32px;
 }
 
+.view-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-header .logout-btn-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface);
+  color: var(--text-1);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-header .logout-btn-header:hover {
+  background: var(--border);
+  border-color: var(--text-3);
+}
+
+.view-header .logout-btn-header:active {
+  transform: scale(0.98);
+}
+
+.view-header .logout-btn-header:active {
+  transform: scale(0.98);
+}
+
+.view-header .logout-btn-header svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+}
+
 .view-header h1 {
   font-size: 32px;
   font-weight: 800;
@@ -237,6 +280,13 @@ body { display: flex; min-height: 100vh; }
 
 /* ── Summary Cards ─────────────────────────────────── */
 .summary-cards {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.budget-summary-cards {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr;
   gap: 16px;
@@ -658,6 +708,92 @@ body { display: flex; min-height: 100vh; }
   align-items: flex-start;
 }
 
+.budget-cycle-card-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+}
+
+.budget-cycle-card-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.budget-cycle-segment {
+  fill: none;
+  stroke-width: 24;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: cycleDraw 0.6s ease forwards;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.budget-cycle-segment:hover {
+  stroke-width: 28;
+  filter: brightness(1.1);
+}
+
+.budget-cycle-segment:hover + .budget-cycle-card-tooltip,
+.budget-card-left:hover .budget-cycle-card-tooltip {
+  opacity: 1;
+}
+
+.budget-cycle-card-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.budget-cycle-card-amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-1);
+}
+
+.budget-cycle-card-label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.budget-cycle-card-tooltip {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  display: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.budget-cycle-card-container:hover .budget-cycle-card-tooltip {
+  opacity: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.budget-cycle-card-tooltip .tooltip-category {
+  font-weight: 600;
+}
+
+.budget-cycle-card-tooltip .tooltip-amount {
+  font-weight: 700;
+}
+
 .budget-card-left {
   display: flex;
   flex-direction: column;
@@ -665,6 +801,24 @@ body { display: flex; min-height: 100vh; }
   gap: 12px;
   position: relative;
   min-width: 150px;
+}
+
+.budget-simple-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.budget-item-card .budget-card-left {
+  min-width: 20px;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.budget-item-card .budget-card-left .budget-chart-text {
+  text-align: left;
 }
 
 .budget-chart-text {
@@ -1039,6 +1193,88 @@ body { display: flex; min-height: 100vh; }
   box-shadow: 0 0 0 3px rgba(0,0,0,0.1), inset 0 0 0 2px rgba(255,255,255,0.8);
 }
 
+.color-select-wrapper {
+  position: relative;
+}
+
+.color-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.color-select-trigger:hover {
+  border-color: var(--text-3);
+}
+
+.color-select-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-1);
+}
+
+.color-select-arrow {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s;
+}
+
+.color-select-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+.color-select-dropdown.open {
+  display: block;
+}
+
+.color-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.color-list-item:hover {
+  background: var(--border);
+}
+
+.color-list-item.active {
+  background: var(--border);
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.color-name {
+  font-size: 14px;
+  color: var(--text-1);
+}
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 .radio-group { display: flex; gap: 10px; }
@@ -1397,6 +1633,11 @@ body { display: flex; min-height: 100vh; }
     width: 20px;
     height: 20px;
   }
+
+  /* Logout Button (Header) - hidden, using header version instead */
+  .logout-btn-top {
+    display: none;
+  }
   
   /* Overlay for mobile sidebar */
   .sidebar-overlay {
@@ -1439,6 +1680,63 @@ body { display: flex; min-height: 100vh; }
   .budget-chart-left {
     min-width: 100%;
   }
+
+  .budget-summary-card .budget-card-new {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .budget-summary-card .budget-card-right {
+    width: 100%;
+  }
+
+  .budget-cycle-card-container {
+    width: 160px;
+    height: 160px;
+  }
+
+  .budget-cycle-card-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .budget-cycle-card-amount {
+    font-size: 20px;
+  }
+
+  .budget-cycle-card-label {
+    font-size: 11px;
+  }
+
+  .budget-card-new {
+    flex-wrap: wrap;
+  }
+
+  .budget-card-right {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .budget-item-card .budget-card-left {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .budget-item-card .budget-card-left .budget-chart-text {
+    text-align: left;
+  }
+
+  .stat-item {
+    flex: 1;
+  }
+
+  .budget-latest-items {
+    max-height: 150px;
+    overflow-y: auto;
+  }
 }
 
 @media (min-width: 769px) {
@@ -1458,5 +1756,83 @@ body { display: flex; min-height: 100vh; }
   
   .color-palette {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .budget-cycle-card-container {
+    width: 140px;
+    height: 140px;
+  }
+
+  .budget-cycle-card-amount {
+    font-size: 18px;
+  }
+
+  .budget-cycle-card-label {
+    font-size: 11px;
+  }
+
+  .budget-summary-card .budget-card-new {
+    padding: 16px;
+  }
+
+  .budget-summary-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .budget-latest-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .summary-cards,
+  .budget-summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-card-new {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .budget-item-card .budget-card-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .budget-item-card .budget-card-left .budget-chart-text {
+    text-align: left;
+    width: 100%;
+  }
+
+  .budget-chart-text {
+    text-align: center;
+  }
+
+  .budget-chart-amount {
+    font-size: 20px;
+  }
+
+  .budget-cycle-center {
+    text-align: center;
+  }
+
+  .budget-cycle-total {
+    font-size: 20px;
+  }
+
+  .budget-cycle-label {
+    font-size: 11px;
+  }
+
+  .budget-cycle-limit {
+    font-size: 10px;
+  }
+
+  .budget-cycle-container {
+    width: 160px;
+    height: 160px;
   }
 }

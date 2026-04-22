@@ -550,11 +550,11 @@ function renderOverviewBudgets(state: AppState): void {
   const center = size / 2;
   const gap = 8;
   
-  let cumulativeOffset = 0;
+let cumulativeOffset = 0;
   const segments = budgetDetails.map(({ budget: b, spent }, i) => {
-    const pct = totalSpent > 0 ? (spent / totalSpent) * 100 : 0;
+    const pct = (b.limit / totalLimit) * 100;
     const segmentLength = (pct / 100) * circumference;
-    const dasharray = `${segmentLength - gap} ${circumference - segmentLength}`;
+    const dasharray = `${Math.max(segmentLength - gap, 0)} ${circumference - segmentLength}`;
     const dashoffset = -(cumulativeOffset + (gap / 2));
     cumulativeOffset += segmentLength;
     return { ...b, spent, pct, dasharray, dashoffset, index: i };
@@ -620,7 +620,95 @@ function renderBudgets(state: AppState): void {
     grid.innerHTML = `<p class="empty-state">You haven't created a budget yet.</p>`;
     return;
   }
-  grid.innerHTML = state.budgets.map(b => {
+
+  const budgetDetails = state.budgets.map(b => {
+    const spent = spentInCategory(state.transactions, b.category);
+    return { budget: b, spent };
+  });
+
+  const totalSpent = budgetDetails.reduce((sum, bd) => sum + bd.spent, 0);
+  const totalBudget = state.budgets.reduce((sum, b) => sum + b.limit, 0);
+  const totalRemaining = totalBudget - totalSpent;
+  
+  const size = 180;
+  const strokeWidth = 24;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+  const gap = 6;
+  
+  let cumulativeOffset = 0;
+  const segments = budgetDetails.map(({ budget: b, spent }, i) => {
+    const pct = totalSpent > 0 ? (spent / totalSpent) * 100 : 0;
+    const segmentLength = (pct / 100) * circumference;
+    const dasharray = `${Math.max(segmentLength - gap, 0)} ${circumference - segmentLength}`;
+    const dashoffset = -(cumulativeOffset + (gap / 2));
+    cumulativeOffset += segmentLength;
+    return { ...b, spent, pct, dasharray, dashoffset, index: i };
+  });
+
+  const summaryCard = `
+    <div class="budget-card-new budget-summary-card">
+      <div class="budget-card-left">
+        <div class="budget-cycle-card-container">
+          <svg class="budget-cycle-card-svg" viewBox="0 0 ${size} ${size}">
+            <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="var(--border)" stroke-width="${strokeWidth}" opacity="0.2"/>
+            ${segments.map(s => `
+              <circle 
+                class="budget-cycle-segment" 
+                cx="${center}" 
+                cy="${center}" 
+                r="${radius}" 
+                stroke="${s.color}"
+                stroke-dasharray="${s.dasharray}" 
+                stroke-dashoffset="${s.dashoffset}"
+                data-category="${s.category}"
+                data-spent="${s.spent}"
+                data-pct="${s.pct.toFixed(1)}"
+              />`).join("")}
+          </svg>
+          <div class="budget-cycle-card-center">
+            <div class="budget-cycle-card-amount">${formatCurrency(totalSpent)}</div>
+            <div class="budget-cycle-card-label">Spent</div>
+          </div>
+        </div>
+      </div>
+      <div class="budget-card-right">
+        <div class="budget-card-header-new">
+          <div>
+            <div class="budget-card-title">Total Spending</div>
+            <div class="budget-card-subtitle">Across all budgets</div>
+          </div>
+        </div>
+        <div class="budget-summary-stats">
+          <div class="stat-item">
+            <div class="stat-label">Total Budget</div>
+            <div class="stat-value">${formatCurrency(totalBudget)}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Remaining</div>
+            <div class="stat-value">${formatCurrency(totalRemaining)}</div>
+          </div>
+        </div>
+        <div class="budget-latest">
+          <div class="budget-latest-header">
+            <h4>Budget Summary</h4>
+          </div>
+          <div class="budget-latest-items">
+            ${budgetDetails.map(({ budget: b, spent }) => `
+              <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0">
+                <span style="display:flex;align-items:center;gap:8px">
+                  <span class="budget-color-dot" style="background-color:${b.color};width:10px;height:10px;border-radius:50%"></span>
+                  ${CATEGORY_LABEL[b.category]}
+                </span>
+                <span>${formatCurrency(spent)} / ${formatCurrency(b.limit)}</span>
+              </div>`).join("")}
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  const individualCards = state.budgets.map(b => {
     const spent = spentInCategory(state.transactions, b.category);
     const pct   = clamp((spent / b.limit) * 100, 0, 100);
     const over  = spent > b.limit;
@@ -642,7 +730,7 @@ function renderBudgets(state: AppState): void {
     return `
       <div class="budget-card-new">
         <div class="budget-card-left">
-          <div class="budget-color-dot" style="background-color:${b.color}"></div>
+          <div class="budget-simple-dot" style="background-color:${b.color}"></div>
           <div class="budget-chart-text">
             <div class="budget-chart-amount">${formatCurrency(spent)}</div>
             <div class="budget-chart-label">of ${formatCurrency(b.limit)} limit</div>
@@ -684,6 +772,166 @@ function renderBudgets(state: AppState): void {
         </div>
       </div>`;
   }).join("");
+
+  grid.innerHTML = summaryCard + individualCards;
+
+  setTimeout(() => {
+    document.querySelectorAll('.budget-cycle-segment').forEach((seg, i) => {
+      const el = seg as HTMLElement;
+      el.style.animation = `cycleDraw 0.6s ease forwards`;
+      el.style.animationDelay = `${i * 0.15}s`;
+      el.style.opacity = '0';
+    });
+  }, 0);
+}
+
+  const budgetDetails = state.budgets.map(b => {
+    const spent = spentInCategory(state.transactions, b.category);
+    return { budget: b, spent };
+  });
+
+  const totalSpent = budgetDetails.reduce((sum, bd) => sum + bd.spent, 0);
+  
+  const size = 180;
+  const strokeWidth = 24;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+  const gap = 6;
+  
+  let cumulativeOffset = 0;
+  const segments = budgetDetails.map(({ budget: b, spent }, i) => {
+    const pct = totalSpent > 0 ? (spent / totalSpent) * 100 : 0;
+    const segmentLength = (pct / 100) * circumference;
+    const dasharray = `${Math.max(segmentLength - gap, 0)} ${circumference - segmentLength}`;
+    const dashoffset = -(cumulativeOffset + (gap / 2));
+    cumulativeOffset += segmentLength;
+    return { ...b, spent, pct, dasharray, dashoffset, index: i };
+  });
+
+  grid.innerHTML = state.budgets.map(b => {
+    const spent = spentInCategory(state.transactions, b.category);
+    const pct   = clamp((spent / b.limit) * 100, 0, 100);
+    const over  = spent > b.limit;
+    const remaining = Math.max(0, b.limit - spent);
+    
+    const latestTxns = state.transactions
+      .filter(t => t.category === b.category)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 3);
+    
+    const latestSpendingHtml = latestTxns.length === 0 
+      ? `<p style="color:var(--text-2);font-size:13px">You haven't made any spendings yet.</p>`
+      : latestTxns.map(t => `
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0">
+          <span>${t.name}</span>
+          <span>${formatCurrency(t.amount)}</span>
+        </div>`).join("");
+    
+    return `
+      <div class="budget-card-new">
+        <div class="budget-card-left">
+          <div class="budget-cycle-card-container">
+            <svg class="budget-cycle-card-svg" viewBox="0 0 ${size} ${size}">
+              <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="var(--border)" stroke-width="${strokeWidth}" opacity="0.2"/>
+              ${segments.map(s => `
+                <circle 
+                  class="budget-cycle-segment" 
+                  cx="${center}" 
+                  cy="${center}" 
+                  r="${radius}" 
+                  stroke="${s.color}"
+                  stroke-dasharray="${s.dasharray}" 
+                  stroke-dashoffset="${s.dashoffset}"
+                  data-category="${s.category}"
+                  data-spent="${s.spent}"
+                  data-pct="${s.pct.toFixed(1)}"
+                />`).join("")}
+            </svg>
+<div class="budget-cycle-card-center">
+              <div class="budget-cycle-card-amount">${formatCurrency(spent)}</div>
+              <div class="budget-cycle-card-label">Spent</div>
+            </div>
+            <div class="budget-cycle-card-tooltip">
+              <span class="tooltip-category">${CATEGORY_LABEL[b.category]}</span>
+              <span class="tooltip-amount">${formatCurrency(spent)}</span>
+            </div>
+          </div>
+        </div>
+            <div class="budget-cycle-card-tooltip" id="tooltip-${b.id}">
+              <span class="tooltip-category">${CATEGORY_LABEL[b.category]}</span>
+              <span class="tooltip-amount">${formatCurrency(spent)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="budget-card-right">
+          <div class="budget-card-header-new">
+            <div>
+              <div class="budget-card-title">${CATEGORY_LABEL[b.category]}</div>
+              <div class="budget-card-subtitle">Maximum of ${formatCurrency(b.limit)}</div>
+            </div>
+            <div class="budget-menu">
+              <button class="budget-menu-btn" onclick="toggleBudgetMenu('${b.id}')" title="Menu">⋮</button>
+              <div class="budget-menu-dropdown" id="menu-${b.id}" style="display:none">
+                <button onclick="showEditBudget('${b.id}')">Edit Budget</button>
+                <button class="delete-option" onclick="deleteBudget('${b.id}')">Delete Budget</button>
+              </div>
+            </div>
+          </div>
+          <div class="budget-summary-stats">
+            <div class="stat-item">
+              <div class="stat-label">Spent</div>
+              <div class="stat-value">${formatCurrency(spent)}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Free</div>
+              <div class="stat-value">${formatCurrency(remaining)}</div>
+            </div>
+          </div>
+          <div class="budget-latest">
+            <div class="budget-latest-header">
+              <h4>Latest Spending</h4>
+              <a href="#" class="see-all" data-view="transactions">See All</a>
+            </div>
+            <div class="budget-latest-items">
+              ${latestSpendingHtml}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+
+setTimeout(() => {
+    document.querySelectorAll('.budget-cycle-segment').forEach((seg, i) => {
+      const el = seg as HTMLElement;
+      el.style.animation = `cycleDraw 0.6s ease forwards`;
+      el.style.animationDelay = `${i * 0.15}s`;
+      el.style.opacity = '0';
+      
+      el.addEventListener('mouseenter', function() {
+        const category = this.getAttribute('data-category');
+        const spent = parseFloat(this.getAttribute('data-spent'));
+        const limit = state.budgets.find(b => b.category === category)?.limit || 0;
+        const centerEl = document.querySelector('.budget-summary-card .budget-cycle-card-center');
+        if (centerEl) {
+          (centerEl as HTMLElement).innerHTML = `
+            <div class="budget-cycle-card-amount">${formatCurrency(spent || 0)}</div>
+            <div class="budget-cycle-card-label">${CATEGORY_LABEL[category]} - ${formatCurrency(limit)} limit</div>
+          `;
+        }
+      });
+      
+      el.addEventListener('mouseleave', function() {
+        const centerEl = document.querySelector('.budget-summary-card .budget-cycle-card-center');
+        if (centerEl) {
+          (centerEl as HTMLElement).innerHTML = `
+            <div class="budget-cycle-card-amount">${formatCurrency(totalSpent)}</div>
+            <div class="budget-cycle-card-label">Spent</div>
+          `;
+        }
+      });
+    });
+  }, 0);
 }
 
 function renderPots(pots: SavingsPot[]): void {

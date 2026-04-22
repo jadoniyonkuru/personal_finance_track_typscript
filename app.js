@@ -11,6 +11,37 @@ const CATEGORY_LABEL = {
     shopping: "Shopping",
     utilities: "Utilities",
     other: "Other",
+    rent: "Rent & Housing",
+    insurance: "Insurance",
+    education: "Education",
+    subscriptions: "Subscriptions",
+    gifts: "Gifts & Donations",
+    travel: "Travel",
+    pets: "Pets",
+    savings: "Savings",
+    investments: "Investments",
+};
+const COLOR_NAMES = {
+    "#f59e0b": "Amber",
+    "#3b82f6": "Blue",
+    "#8b5cf6": "Violet",
+    "#ec4899": "Pink",
+    "#f97316": "Orange",
+    "#64748b": "Slate",
+    "#37b5a0": "Teal",
+    "#c94f2e": "Rust",
+    "#14b8a6": "Cyan",
+    "#6366f1": "Indigo",
+    "#84cc16": "Lime",
+    "#e11d48": "Rose",
+    "#0ea5e9": "Sky",
+    "#a855f7": "Purple",
+    "#f43f5e": "Red",
+    "#22c55e": "Green",
+    "#eab308": "Yellow",
+    "#06b6d4": "Aquamarine",
+    "#d946ef": "Fuchsia",
+    "#ef4444": "Red Orange"
 };
 const BUDGET_COLORS = {
     food: "#f59e0b",
@@ -421,9 +452,9 @@ function renderOverviewBudgets(state) {
     const gap = 8;
     let cumulativeOffset = 0;
     const segments = budgetDetails.map(({ budget: b, spent }, i) => {
-        const pct = totalSpent > 0 ? (spent / totalSpent) * 100 : 0;
+        const pct = (b.limit / totalLimit) * 100;
         const segmentLength = (pct / 100) * circumference;
-        const dasharray = `${segmentLength - gap} ${circumference - segmentLength}`;
+        const dasharray = `${Math.max(segmentLength - gap, 0)} ${circumference - segmentLength}`;
         const dashoffset = -(cumulativeOffset + (gap / 2));
         cumulativeOffset += segmentLength;
         return { ...b, spent, pct, dasharray, dashoffset, index: i };
@@ -482,11 +513,109 @@ function renderOverviewBudgets(state) {
 }
 function renderBudgets(state) {
     const grid = getEl("budgetGrid");
+    const totalBudget = state.budgets.reduce((sum, b) => sum + b.limit, 0);
+    const totalSpent = state.budgets.reduce((sum, b) => sum + spentInCategory(state.transactions, b.category), 0);
+    const totalRemaining = totalBudget - totalSpent;
+    const elTotalBudget = getEl("totalBudget");
+    const elTotalSpent = getEl("totalSpent");
+    const elTotalRemaining = getEl("totalRemaining");
+    if (elTotalBudget) elTotalBudget.textContent = formatCurrency(totalBudget);
+    if (elTotalSpent) elTotalSpent.textContent = formatCurrency(totalSpent);
+    if (elTotalRemaining) {
+        elTotalRemaining.textContent = formatCurrency(totalRemaining);
+        elTotalRemaining.style.color = totalRemaining < 0 ? "var(--expense)" : "var(--text-1)";
+    }
     if (state.budgets.length === 0) {
         grid.innerHTML = `<p class="empty-state">You haven't created a budget yet.</p>`;
         return;
     }
-    grid.innerHTML = state.budgets.map(b => {
+
+    const budgetDetails = state.budgets.map(b => {
+        const spent = spentInCategory(state.transactions, b.category);
+        return { budget: b, spent };
+    });
+
+    const allTotalSpent = budgetDetails.reduce((sum, bd) => sum + bd.spent, 0);
+    
+    const size = 180;
+    const strokeWidth = 24;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const center = size / 2;
+    const gap = 6;
+    
+    let cumulativeOffset = 0;
+    const segments = budgetDetails.map(({ budget: b, spent }, i) => {
+        const pct = (b.limit / totalBudget) * 100;
+        const segmentLength = (pct / 100) * circumference;
+        const dasharray = `${Math.max(segmentLength - gap, 0)} ${circumference - segmentLength}`;
+        const dashoffset = -(cumulativeOffset + (gap / 2));
+        cumulativeOffset += segmentLength;
+        return { ...b, spent, pct, dasharray, dashoffset, index: i };
+    });
+
+    const summaryCard = `
+      <div class="budget-card-new budget-summary-card">
+        <div class="budget-card-left">
+          <div class="budget-cycle-card-container">
+            <svg class="budget-cycle-card-svg" viewBox="0 0 ${size} ${size}">
+              <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="var(--border)" stroke-width="${strokeWidth}" opacity="0.2"/>
+              ${segments.map(s => `
+                <circle 
+                  class="budget-cycle-segment" 
+                  cx="${center}" 
+                  cy="${center}" 
+                  r="${radius}" 
+                  stroke="${s.color}"
+                  stroke-dasharray="${s.dasharray}" 
+                  stroke-dashoffset="${s.dashoffset}"
+                  data-category="${s.category}"
+                  data-spent="${s.spent}"
+                  data-pct="${s.pct.toFixed(1)}"
+                />`).join("")}
+            </svg>
+            <div class="budget-cycle-card-center">
+              <div class="budget-cycle-card-amount">${formatCurrency(allTotalSpent)}</div>
+              <div class="budget-cycle-card-label">Spent</div>
+            </div>
+          </div>
+        </div>
+        <div class="budget-card-right">
+          <div class="budget-card-header-new">
+            <div>
+              <div class="budget-card-title">Total Spending</div>
+              <div class="budget-card-subtitle">Across all budgets</div>
+            </div>
+          </div>
+          <div class="budget-summary-stats">
+            <div class="stat-item">
+              <div class="stat-label">Total Budget</div>
+              <div class="stat-value">${formatCurrency(totalBudget)}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Remaining</div>
+              <div class="stat-value">${formatCurrency(totalRemaining)}</div>
+            </div>
+          </div>
+          <div class="budget-latest">
+            <div class="budget-latest-header">
+              <h4>Budget Summary</h4>
+            </div>
+            <div class="budget-latest-items">
+              ${budgetDetails.map(({ budget: b, spent }) => `
+                <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0">
+                  <span style="display:flex;align-items:center;gap:8px">
+                    <span class="budget-color-dot" style="background-color:${b.color};width:10px;height:10px;border-radius:50%"></span>
+                    ${CATEGORY_LABEL[b.category]}
+                  </span>
+                  <span>${formatCurrency(spent)} / ${formatCurrency(b.limit)}</span>
+                </div>`).join("")}
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    const individualCards = state.budgets.map(b => {
         const spent = spentInCategory(state.transactions, b.category);
         const pct = clamp((spent / b.limit) * 100, 0, 100);
         const over = spent > b.limit;
@@ -503,9 +632,9 @@ function renderBudgets(state) {
           <span>${formatCurrency(t.amount)}</span>
         </div>`).join("");
         return `
-      <div class="budget-card-new">
+      <div class="budget-card-new budget-item-card">
         <div class="budget-card-left">
-          <div class="budget-color-dot" style="background-color:${b.color}"></div>
+          <div class="budget-simple-dot" style="background-color:${b.color}"></div>
           <div class="budget-chart-text">
             <div class="budget-chart-amount">${formatCurrency(spent)}</div>
             <div class="budget-chart-label">of ${formatCurrency(b.limit)} limit</div>
@@ -547,6 +676,40 @@ function renderBudgets(state) {
         </div>
       </div>`;
     }).join("");
+
+    grid.innerHTML = summaryCard + individualCards;
+
+    setTimeout(() => {
+        document.querySelectorAll('.budget-cycle-segment').forEach((seg, i) => {
+            const el = seg;
+            el.style.animation = `cycleDraw 0.6s ease forwards`;
+            el.style.animationDelay = `${i * 0.15}s`;
+            el.style.opacity = '0';
+            
+            el.addEventListener('mouseenter', function() {
+                const category = this.getAttribute('data-category');
+                const spent = parseFloat(this.getAttribute('data-spent'));
+                const limit = state.budgets.find(b => b.category === category)?.limit || 0;
+                const centerEl = document.querySelector('.budget-summary-card .budget-cycle-card-center');
+                if (centerEl) {
+                    centerEl.innerHTML = `
+                        <div class="budget-cycle-card-amount">${formatCurrency(spent || 0)}</div>
+                        <div class="budget-cycle-card-label">${CATEGORY_LABEL[category]} - ${formatCurrency(limit)} limit</div>
+                    `;
+                }
+            });
+            
+            el.addEventListener('mouseleave', function() {
+                const centerEl = document.querySelector('.budget-summary-card .budget-cycle-card-center');
+                if (centerEl) {
+                    centerEl.innerHTML = `
+                        <div class="budget-cycle-card-amount">${formatCurrency(allTotalSpent)}</div>
+                        <div class="budget-cycle-card-label">Spent</div>
+                    `;
+                }
+            });
+        });
+    }, 0);
 }
 function renderPots(pots) {
     const grid = getEl("potsGrid");
@@ -718,7 +881,7 @@ function openAddBudgetModal() {
         openModal(`<h2>Add Budget</h2><p style="color:var(--text-2);margin-bottom:20px">Budgets set for all categories.</p><button class="btn-black" style="width:100%" onclick="closeModal()">Close</button>`);
         return;
     }
-    const colorSwatches = BUDGET_COLOR_OPTIONS.map(color => `<div class="color-swatch" data-color="${color}" style="background-color:${color}" title="${color}" onclick="selectBudgetColor('${color}')"></div>`).join("");
+    const colorList = BUDGET_COLOR_OPTIONS.map(color => `<div class="color-list-item" data-color="${color}" onclick="selectBudgetColor('${color}')"><span class="color-dot" style="background-color:${color}"></span><span class="color-name">${COLOR_NAMES[color] || color}</span></div>`).join("");
     openModal(`
     <h2>Add New Budget</h2>
     <p style="color:var(--text-2);margin-bottom:20px;font-size:14px">Choose a category to set a spending budget. These categories can help you monitor spending.</p>
@@ -734,13 +897,17 @@ function openAddBudgetModal() {
       <input class="input-field" id="budgetLimit" type="number" min="1" step="1" placeholder="e.g. $2000" />
     </div>
     <div class="form-group">
-      <label class="input-label">Theme Color</label>
-      <div class="color-palette">
-        ${colorSwatches}
+      <label class="input-label" for="budgetTheme">Select Theme</label>
+      <div class="color-select-wrapper" id="colorSelectWrapper">
+        <div class="color-select-trigger" id="colorSelectTrigger" onclick="toggleColorDropdown()">
+          <span id="budgetThemePreview" class="color-select-value">Select a color</span>
+          <svg class="color-select-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="color-select-dropdown" id="colorSelectDropdown">
+          ${colorList}
+        </div>
       </div>
       <input class="input-field" id="budgetTheme" type="hidden" />
-      <div id="budgetThemePreview" style="display:none;margin-top:12px;padding:12px;border-radius:8px;background:var(--border);text-align:center;font-size:13px;color:var(--text-2)">Color selected: <span id="budgetThemeText" style="font-weight:600;color:var(--text-1)"></span></div>
-    </div>
     </div>
     <button class="btn-black" style="width:100%;padding:12px;font-weight:600" onclick="saveBudget()">Submit</button>
   `);
@@ -767,25 +934,33 @@ window.saveBudget = () => {
     closeModal();
     renderAll();
 };
+window.toggleColorDropdown = () => {
+    const dropdown = getEl("colorSelectDropdown");
+    if (dropdown) {
+        dropdown.classList.toggle("open");
+    }
+};
 window.selectBudgetColor = (color) => {
     const themeInput = getEl("budgetTheme");
     const preview = getEl("budgetThemePreview");
-    const previewText = getEl("budgetThemeText");
     if (themeInput)
         themeInput.value = color;
-    if (preview)
-        preview.style.display = "block";
-    if (previewText)
-        previewText.textContent = color;
-    // Update active state on swatches
-    const swatches = document.querySelectorAll(".color-swatch");
-    swatches.forEach(swatch => {
-        const swatchColor = swatch.getAttribute("data-color");
-        if (swatchColor === color) {
-            swatch.classList.add("active");
+    if (preview) {
+        preview.innerHTML = `<span class="color-dot" style="background-color:${color}"></span> ${COLOR_NAMES[color] || color}`;
+    }
+    const dropdown = getEl("colorSelectDropdown");
+    if (dropdown) {
+        dropdown.classList.remove("open");
+    }
+    // Update active state on list items
+    const items = document.querySelectorAll(".color-list-item");
+    items.forEach(item => {
+        const itemColor = item.getAttribute("data-color");
+        if (itemColor === color) {
+            item.classList.add("active");
         }
         else {
-            swatch.classList.remove("active");
+            item.classList.remove("active");
         }
     });
 };
@@ -816,6 +991,73 @@ window.deleteBudget = (id) => {
     const state = loadState();
     state.budgets = state.budgets.filter(b => b.id !== id);
     saveState(state);
+    renderAll();
+};
+window.toggleBudgetMenu = (id) => {
+    const menu = getEl(`menu-${id}`);
+    if (menu) {
+        menu.style.display = menu.style.display === "none" ? "block" : "none";
+    }
+};
+window.showEditBudget = (id) => {
+    const state = loadState();
+    const budget = state.budgets.find(b => b.id === id);
+    if (!budget) return;
+    const colorList = BUDGET_COLOR_OPTIONS.map(color => `<div class="color-list-item" data-color="${color}" onclick="selectBudgetColorEdit('${color}')"><span class="color-dot" style="background-color:${color}"></span><span class="color-name">${COLOR_NAMES[color] || color}</span></div>`).join("");
+    openModal(`
+    <h2>Edit Budget</h2>
+    <p style="color:var(--text-2);margin-bottom:20px;font-size:14px">Update your budget details.</p>
+    <div class="form-group">
+      <label class="input-label" for="editBudgetLimit">Maximum Spend</label>
+      <input class="input-field" id="editBudgetLimit" type="number" min="1" step="1" value="${budget.limit}" />
+    </div>
+    <div class="form-group">
+      <label class="input-label" for="editBudgetTheme">Select Theme</label>
+      <div class="color-select-wrapper" id="colorSelectWrapperEdit">
+        <div class="color-select-trigger" id="colorSelectTriggerEdit" onclick="toggleColorDropdownEdit()">
+          <span id="editBudgetThemePreview" class="color-select-value"><span class="color-dot" style="background-color:${budget.color}"></span> ${COLOR_NAMES[budget.color] || budget.color}</span>
+          <svg class="color-select-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="color-select-dropdown" id="colorSelectDropdownEdit">
+          ${colorList}
+        </div>
+      </div>
+      <input class="input-field" id="editBudgetTheme" type="hidden" value="${budget.color}" />
+    </div>
+    <button class="btn-black" style="width:100%;padding:12px;font-weight:600" onclick="saveEditBudget('${id}')">Save Changes</button>
+  `);
+};
+window.toggleColorDropdownEdit = () => {
+    const dropdown = getEl("colorSelectDropdownEdit");
+    if (dropdown) {
+        dropdown.classList.toggle("open");
+    }
+};
+window.selectBudgetColorEdit = (color) => {
+    const themeInput = getEl("editBudgetTheme");
+    const preview = getEl("editBudgetThemePreview");
+    if (themeInput) themeInput.value = color;
+    if (preview) {
+        preview.innerHTML = `<span class="color-dot" style="background-color:${color}"></span> ${COLOR_NAMES[color] || color}`;
+    }
+    const dropdown = getEl("colorSelectDropdownEdit");
+    if (dropdown) dropdown.classList.remove("open");
+};
+window.saveEditBudget = (id) => {
+    const limit = parseFloat(getEl("editBudgetLimit").value);
+    const color = getEl("editBudgetTheme").value;
+    if (isNaN(limit) || limit <= 0) {
+        alert("Enter a valid limit.");
+        return;
+    }
+    const state = loadState();
+    const budget = state.budgets.find(b => b.id === id);
+    if (budget) {
+        budget.limit = limit;
+        budget.color = color;
+    }
+    saveState(state);
+    closeModal();
     renderAll();
 };
 // ── 12. POT ACTIONS ───────────────────────────────────────────
@@ -1021,6 +1263,9 @@ function bindEvents() {
         if (!e.target.closest(".budget-menu")) {
             document.querySelectorAll(".budget-menu-dropdown").forEach(m => m.style.display = "none");
         }
+        if (!e.target.closest(".color-select-wrapper")) {
+            document.querySelectorAll(".color-select-dropdown").forEach(d => d.classList.remove("open"));
+        }
     });
     // Sidebar minimize
     getEl("minimizeBtn").addEventListener("click", () => {
@@ -1048,8 +1293,8 @@ function bindEvents() {
     getEl("openAddBudget").addEventListener("click", openAddBudgetModal);
     getEl("openAddPot").addEventListener("click", openAddPotModal);
     getEl("openAddBill").addEventListener("click", openAddBillModal);
-    // Logout
-    getEl("logoutBtn").addEventListener("click", () => {
+    // Logout (Header button)
+    getEl("logoutBtnHeader").addEventListener("click", () => {
         logout();
         showAuthPage();
     });

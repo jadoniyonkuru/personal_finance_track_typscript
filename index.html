@@ -82,10 +82,6 @@
       </ul>
     </div>
     <div class="sidebar-bottom">
-      <button class="sidebar-action-btn" id="logoutBtn">
-        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span class="nav-label">Logout</span>
-      </button>
       <button class="minimize-btn" id="minimizeBtn">
         <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
         <span class="nav-label">Minimize Menu</span>
@@ -105,6 +101,12 @@
     <section class="view active" id="view-overview">
       <header class="view-header">
         <h1>Overview</h1>
+        <div class="view-header-actions">
+          <button class="logout-btn-header" id="logoutBtnHeader">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </header>
       <div class="summary-cards">
         <div class="card card-dark">
@@ -163,7 +165,13 @@
     <section class="view" id="view-transactions">
       <header class="view-header">
         <h1>Transactions</h1>
-        <button class="btn-black" id="openAddTxn">+Add New Transaction</button>
+        <div class="view-header-actions">
+          <button class="btn-black" id="openAddTxn">+Add New Transaction</button>
+          <button class="logout-btn-header" id="logoutBtnHeader">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </header>
       <div class="panel">
         <div class="filter-bar">
@@ -211,8 +219,28 @@
     <section class="view" id="view-budgets">
       <header class="view-header">
         <h1>Budgets</h1>
-        <button class="btn-black" id="openAddBudget">+Add New Budget</button>
+        <div class="view-header-actions">
+          <button class="btn-black" id="openAddBudget">+Add New Budget</button>
+          <button class="logout-btn-header" id="logoutBtnHeader">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </header>
+      <div class="budget-summary-cards">
+        <div class="card card-dark">
+          <span class="card-label">Total Budget</span>
+          <span class="card-amount" id="totalBudget">$0.00</span>
+        </div>
+        <div class="card">
+          <span class="card-label">Total Spent</span>
+          <span class="card-amount" id="totalSpent">$0.00</span>
+        </div>
+        <div class="card">
+          <span class="card-label">Remaining</span>
+          <span class="card-amount" id="totalRemaining">$0.00</span>
+        </div>
+      </div>
       <div class="budget-grid" id="budgetGrid">
         <p class="empty-state">You haven't created a budget yet.</p>
       </div>
@@ -222,7 +250,13 @@
     <section class="view" id="view-pots">
       <header class="view-header">
         <h1>Pots</h1>
-        <button class="btn-black" id="openAddPot">+Add New Pot</button>
+        <div class="view-header-actions">
+          <button class="btn-black" id="openAddPot">+Add New Pot</button>
+          <button class="logout-btn-header" id="logoutBtnHeader">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </header>
       <div class="pots-grid" id="potsGrid">
         <p class="empty-state">No savings pots yet.</p>
@@ -233,7 +267,13 @@
     <section class="view" id="view-bills">
       <header class="view-header">
         <h1>Recurring Bills</h1>
-        <button class="btn-black" id="openAddBill">+Add New Bill</button>
+        <div class="view-header-actions">
+          <button class="btn-black" id="openAddBill">+Add New Bill</button>
+          <button class="logout-btn-header" id="logoutBtnHeader">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </header>
       <div class="bills-layout">
         <div class="bills-left">
